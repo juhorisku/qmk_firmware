@@ -97,8 +97,8 @@ def generate_estimated_dimensions(kb_info_json, config_h_lines):
                 height = max(height, y + h)
 
         # sizes are in micrometers - assume 1u = 19.05mm
-        config_h_lines.append(generate_define('ESTIMATED_KEYBOARD_WIDTH', width * 19050))
-        config_h_lines.append(generate_define('ESTIMATED_KEYBOARD_HEIGHT', height * 19050))
+        config_h_lines.append(generate_define('ESTIMATED_KEYBOARD_WIDTH', int(width * 19050)))
+        config_h_lines.append(generate_define('ESTIMATED_KEYBOARD_HEIGHT', int(height * 19050)))
 
 
 def generate_config_items(kb_info_json, config_h_lines):
