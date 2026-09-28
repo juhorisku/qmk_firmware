@@ -38,6 +38,17 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 // clang-format on
 
+// The way into the bootloader stays the one Glorious's firmware taught: Plus and Enter held
+// while plugging in (the user, 2026-09-28: keeping the entry the same is more obvious). NUM
+// alone, QMK's usual bootmagic key for this board, works too. Bootmagic has scanned the matrix
+// twice before asking. Positions from keyboard.json: NUM [0,0], "+" [1,3], "RET" [3,3].
+bool bootmagic_should_reset(void) {
+    bool num   = matrix_get_row(0) & (1 << 0);
+    bool plus  = matrix_get_row(1) & (1 << 3);
+    bool enter = matrix_get_row(3) & (1 << 3);
+    return num || (plus && enter);
+}
+
 // Potentiometer slider, MIDI control, as in the default keymap. A diagnostic build with the
 // QMK console on has no endpoint left for MIDI (the WB32's budget is four besides control:
 // shared, MIDI in, MIDI out, LampArray), so it is built with MIDI_ENABLE=no and no slider.

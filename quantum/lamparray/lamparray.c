@@ -156,18 +156,26 @@ void lamparray_set_attributes_response(uint16_t lamp_id) {
 
 #ifdef CONSOLE_ENABLE
 #    include "print.h"
+#    include "timer.h"
 // What the host sends and what the device did with it, for `qmk console`: every control
-// report, and the first update after each one, then one line per 256 updates so a stream
-// does not flood the console.
+// report and every update, plus a heartbeat every two seconds with the autonomous flag and
+// the update count, so the console is known to be alive and the state can be read over time.
+// A diagnostic build only; the console is off in the firmware that ships.
 static uint16_t updates_since_control = 0;
+static uint32_t last_heartbeat        = 0;
 static void lamparray_trace_update(const char *kind, bool applied) {
-    if (updates_since_control == 0 || (updates_since_control & 0xFF) == 0) {
-        uprintf("lamparray: %s update #%u %s (autonomous=%u)\n", kind, updates_since_control, applied ? "applied" : "ignored", is_autonomous);
-    }
+    uprintf("lamparray: %s update #%u %s (autonomous=%u)\n", kind, updates_since_control, applied ? "applied" : "ignored", is_autonomous);
     updates_since_control++;
+}
+static void lamparray_trace_heartbeat(void) {
+    if (timer_elapsed32(last_heartbeat) >= 2000) {
+        last_heartbeat = timer_read32();
+        uprintf("lamparray: alive, autonomous=%u, updates since control=%u\n", is_autonomous, updates_since_control);
+    }
 }
 #else
 #    define lamparray_trace_update(kind, applied)
+#    define lamparray_trace_heartbeat()
 #endif
 
 void lamparray_set_control_response(uint8_t autonomous) {
@@ -237,6 +245,7 @@ void lamparray_init(void) {
 }
 
 void lamparray_task(void) {
+    lamparray_trace_heartbeat();
     lamparray_handle_queue();
 
     // TODO: regen cache if dynamic keymap updated?
