@@ -64,6 +64,13 @@ usb_endpoint_in_t usb_endpoints_in[USB_ENDPOINT_IN_COUNT] = {
     [USB_ENDPOINT_IN_DIGITIZER] = QMK_USB_ENDPOINT_IN(USB_EP_MODE_TYPE_INTR, DIGITIZER_EPSIZE, DIGITIZER_IN_EPNUM, DIGITIZER_IN_CAPACITY, NULL, QMK_USB_REPORT_STORAGE_DEFAULT(sizeof(report_digitizer_t))),
 #endif
 
+#if defined(LAMPARRAY_ENABLE)
+    /* Every LampArray report is a feature report on the control endpoint, answered by the
+     * endpoint's own request callback; the interrupt endpoint exists because the interface
+     * declares one and nothing is ever sent on it, so no report storage. */
+    [USB_ENDPOINT_IN_LAMPARRAY] = QMK_USB_ENDPOINT_IN(USB_EP_MODE_TYPE_INTR, LAMPARRAY_EPSIZE, LAMPARRAY_IN_EPNUM, LAMPARRAY_IN_CAPACITY, lamparray_usb_request_cb, NULL),
+#endif
+
 #if defined(CONSOLE_ENABLE)
 #    if defined(USB_ENDPOINTS_ARE_REORDERABLE)
     [USB_ENDPOINT_IN_CONSOLE] = QMK_USB_ENDPOINT_IN_SHARED(USB_EP_MODE_TYPE_INTR, CONSOLE_EPSIZE, CONSOLE_IN_EPNUM, CONSOLE_IN_CAPACITY, NULL, QMK_USB_REPORT_STORAGE_DEFAULT(CONSOLE_EPSIZE)),
@@ -142,6 +149,10 @@ usb_endpoint_in_lut_t usb_endpoint_interface_lut[TOTAL_INTERFACES] = {
 
 #if defined(DIGITIZER_ENABLE) && !defined(DIGITIZER_SHARED_EP)
     [DIGITIZER_INTERFACE] = USB_ENDPOINT_IN_DIGITIZER,
+#endif
+
+#if defined(LAMPARRAY_ENABLE)
+    [LAMPARRAY_INTERFACE] = USB_ENDPOINT_IN_LAMPARRAY,
 #endif
 };
 

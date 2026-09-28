@@ -258,6 +258,10 @@ extern layer_state_t layer_state;
 #    include "community_modules.h"
 #endif
 
+#ifdef LAMPARRAY_ENABLE
+#    include "lamparray.h"
+#endif
+
 void set_single_default_layer(uint8_t default_layer);
 void set_single_persistent_default_layer(uint8_t default_layer);
 

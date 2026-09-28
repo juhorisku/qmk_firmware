@@ -38,6 +38,10 @@
 extern keymap_config_t keymap_config;
 #endif
 
+#ifdef LAMPARRAY_ENABLE
+#    include "lamparray.h"
+#endif
+
 /* ---------------------------------------------------------
  *       Global interface variables and declarations
  * ---------------------------------------------------------
@@ -246,6 +250,74 @@ static void set_led_transfer_cb(USBDriver *usbp) {
     }
 }
 
+#ifdef LAMPARRAY_ENABLE
+/*
+ * LampArray (HID Lighting and Illumination, usage page 0x59, section 26): every report is a
+ * feature report on the control endpoint. GET_REPORT answers the two attribute reports from
+ * the feature; SET_REPORT takes the other four into a buffer and hands them to the feature
+ * once the data stage has completed. This is the LampArray endpoint's own request callback,
+ * reached because usb_get_report_cb declines an interface that has no report storage, so
+ * the generic hook stays generic.
+ */
+static universal_lamparray_response_t _Alignas(4) lamparray_set_report_buf;
+
+static void lamparray_set_report_transfer_cb(USBDriver *usbp) {
+    (void)usbp;
+    if (lamparray_set_report_buf.report_id == LAMPARRAY_REPORT_ID_ATTRIBUTES_REQUEST) {
+        /* Applied at once: the GET_REPORT that follows depends on it. */
+        lamparray_set_attributes_response(lamparray_set_report_buf.lamp_id);
+    } else {
+        lamparray_queue_request(&lamparray_set_report_buf);
+    }
+}
+
+bool lamparray_usb_request_cb(USBDriver *usbp) {
+    usb_control_request_t *setup = (usb_control_request_t *)usbp->setup;
+
+    if ((setup->bmRequestType & (USB_RTYPE_TYPE_MASK | USB_RTYPE_RECIPIENT_MASK)) != (USB_RTYPE_TYPE_CLASS | USB_RTYPE_RECIPIENT_INTERFACE)) {
+        return false;
+    }
+    if (setup->wIndex != LAMPARRAY_INTERFACE) {
+        return false;
+    }
+
+    switch (setup->bRequest) {
+        case HID_REQ_GetReport:
+            switch (setup->wValue.lbyte) {
+                case LAMPARRAY_REPORT_ID_ATTRIBUTES: {
+                    static lamparray_attributes_report_t _Alignas(4) report = {.report_id = LAMPARRAY_REPORT_ID_ATTRIBUTES};
+                    lamparray_get_attributes(&report.attributes);
+                    usbSetupTransfer(usbp, (uint8_t *)&report, sizeof(report), NULL);
+                    return true;
+                }
+                case LAMPARRAY_REPORT_ID_ATTRIBUTES_RESPONSE: {
+                    static lamparray_attributes_response_report_t _Alignas(4) report = {.report_id = LAMPARRAY_REPORT_ID_ATTRIBUTES_RESPONSE};
+                    lamparray_get_attributes_response(&report.attributes_response);
+                    usbSetupTransfer(usbp, (uint8_t *)&report, sizeof(report), NULL);
+                    return true;
+                }
+            }
+            return false;
+
+        case HID_REQ_SetReport:
+            switch (setup->wValue.lbyte) {
+                case LAMPARRAY_REPORT_ID_ATTRIBUTES_REQUEST:
+                case LAMPARRAY_REPORT_ID_MULTI_UPDATE:
+                case LAMPARRAY_REPORT_ID_RANGE_UPDATE:
+                case LAMPARRAY_REPORT_ID_CONTROL:
+                    if (setup->wLength > sizeof(lamparray_set_report_buf)) {
+                        return false;
+                    }
+                    usbSetupTransfer(usbp, (uint8_t *)&lamparray_set_report_buf, setup->wLength, lamparray_set_report_transfer_cb);
+                    return true;
+            }
+            return false;
+    }
+
+    return false;
+}
+#endif
+
 static bool usb_requests_hook_cb(USBDriver *usbp) {
     usb_control_request_t *setup = (usb_control_request_t *)usbp->setup;
 
@@ -255,7 +327,12 @@ static bool usb_requests_hook_cb(USBDriver *usbp) {
             case USB_RTYPE_DIR_DEV2HOST:
                 switch (setup->bRequest) {
                     case HID_REQ_GetReport:
-                        return usb_get_report_cb(usbp);
+                        if (usb_get_report_cb(usbp)) {
+                            return true;
+                        }
+                        /* An interface without report storage, such as LampArray, answers
+                         * through its endpoint's own request callback below. */
+                        break;
                     case HID_REQ_GetProtocol:
                         if (setup->wIndex == KEYBOARD_INTERFACE) {
                             static uint8_t keyboard_protocol;

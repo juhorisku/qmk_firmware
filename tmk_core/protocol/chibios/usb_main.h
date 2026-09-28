@@ -67,3 +67,14 @@ int8_t sendchar(uint8_t c);
 bool virtser_usb_request_cb(USBDriver *usbp);
 
 #endif
+
+/* ----------------
+ * LampArray header
+ * ----------------
+ */
+
+#if defined(LAMPARRAY_ENABLE)
+
+bool lamparray_usb_request_cb(USBDriver *usbp);
+
+#endif

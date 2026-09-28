@@ -153,6 +153,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef SEQUENCER_ENABLE
 #    include "sequencer.h"
 #endif
+#ifdef LAMPARRAY_ENABLE
+#    include "lamparray.h"
+#endif
 
 static uint32_t last_input_modification_time = 0;
 uint32_t        last_input_activity_time(void) {
@@ -469,6 +472,9 @@ void keyboard_init(void) {
 #ifdef SPLIT_KEYBOARD
     split_pre_init();
 #endif
+#ifdef LAMPARRAY_ENABLE
+    lamparray_init();
+#endif
 #ifdef ENCODER_ENABLE
     encoder_init();
 #endif
@@ -701,6 +707,10 @@ void quantum_task(void) {
 
 #ifdef LAYER_LOCK_ENABLE
     layer_lock_task();
+#endif
+
+#ifdef LAMPARRAY_ENABLE
+    lamparray_task();
 #endif
 
     host_task();

@@ -27,6 +27,10 @@
 #    define DIGITIZER_IN_CAPACITY USB_DEFAULT_BUFFER_CAPACITY
 #endif
 
+#if !defined(LAMPARRAY_IN_CAPACITY)
+#    define LAMPARRAY_IN_CAPACITY 1
+#endif
+
 #if !defined(CONSOLE_IN_CAPACITY)
 #    define CONSOLE_IN_CAPACITY USB_DEFAULT_BUFFER_CAPACITY
 #endif
@@ -84,6 +88,10 @@ typedef enum {
 
 #if defined(DIGITIZER_ENABLE) && !defined(DIGITIZER_SHARED_EP)
     USB_ENDPOINT_IN_DIGITIZER,
+#endif
+
+#if defined(LAMPARRAY_ENABLE)
+    USB_ENDPOINT_IN_LAMPARRAY,
 #endif
 
 #if defined(CONSOLE_ENABLE)

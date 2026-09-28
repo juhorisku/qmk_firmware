@@ -130,6 +130,7 @@
                     { "text": "EEPROM", "link": "/feature_eeprom" },
                     { "text": "Key Lock", "link": "/features/key_lock" },
                     { "text": "Key Overrides", "link": "/features/key_overrides" },
+                    { "text": "LampArray", "link": "/features/lamparray" },
                     { "text": "Layers", "link": "/feature_layers" },
                     { "text": "Layer Lock", "link": "/features/layer_lock" },
                     { "text": "One Shot Keys", "link": "/one_shot_keys" },
