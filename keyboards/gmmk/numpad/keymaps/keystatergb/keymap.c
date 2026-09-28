@@ -4,8 +4,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include QMK_KEYBOARD_H
-#include "analog.h"
-#include "qmk_midi.h"
+#ifdef MIDI_ENABLE
+#    include "analog.h"
+#    include "qmk_midi.h"
+#endif
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -36,8 +38,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 // clang-format on
 
-// Potentiometer slider, MIDI control, as in the default keymap.
-
+// Potentiometer slider, MIDI control, as in the default keymap. A diagnostic build with the
+// QMK console on has no endpoint left for MIDI (the WB32's budget is four besides control:
+// shared, MIDI in, MIDI out, LampArray), so it is built with MIDI_ENABLE=no and no slider.
+#ifdef MIDI_ENABLE
 static uint8_t divisor = 0;
 
 static void slider(void) {
@@ -50,3 +54,4 @@ static void slider(void) {
 void housekeeping_task_user(void) {
     slider();
 }
+#endif
