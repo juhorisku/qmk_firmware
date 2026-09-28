@@ -154,13 +154,35 @@ void lamparray_set_attributes_response(uint16_t lamp_id) {
     cur_lamp_id = lamp_id;
 }
 
+#ifdef CONSOLE_ENABLE
+#    include "print.h"
+// What the host sends and what the device did with it, for `qmk console`: every control
+// report, and the first update after each one, then one line per 256 updates so a stream
+// does not flood the console.
+static uint16_t updates_since_control = 0;
+static void lamparray_trace_update(const char *kind, bool applied) {
+    if (updates_since_control == 0 || (updates_since_control & 0xFF) == 0) {
+        uprintf("lamparray: %s update #%u %s (autonomous=%u)\n", kind, updates_since_control, applied ? "applied" : "ignored", is_autonomous);
+    }
+    updates_since_control++;
+}
+#else
+#    define lamparray_trace_update(kind, applied)
+#endif
+
 void lamparray_set_control_response(uint8_t autonomous) {
     is_autonomous = !!autonomous;
+
+#ifdef CONSOLE_ENABLE
+    uprintf("lamparray: control report, autonomous=%u\n", autonomous);
+    updates_since_control = 0;
+#endif
 
     lamparray_surface_enable(!autonomous);
 }
 
 void lamparray_set_range(lamparray_range_update_t* data) {
+    lamparray_trace_update("range", !is_autonomous);
     // Any Lamp*UpdateReports can be ignored - 26.10.1 AutonomousMode
     if (is_autonomous) {
         return;
@@ -182,6 +204,7 @@ void lamparray_set_range(lamparray_range_update_t* data) {
 }
 
 void lamparray_set_items(lamparray_multi_update_t* data) {
+    lamparray_trace_update("multi", !is_autonomous);
     // Any Lamp*UpdateReports can be ignored - 26.10.1 AutonomousMode
     if (is_autonomous) {
         return;
