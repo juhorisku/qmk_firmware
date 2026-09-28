@@ -4,6 +4,7 @@
 #include "lamparray.h"
 #include "lamparray_surface.h"
 #include "keycodes.h"
+#include "quantum_keycodes.h"
 #include "keymap_introspection.h"
 #include "action_layer.h"
 
@@ -43,6 +44,13 @@
 uint8_t lamparray_binding_at_keymap_location(uint8_t row, uint8_t col) {
     uint16_t keycode = keycode_at_keymap_location(get_highest_layer(default_layer_state), row, col);
     (void)keycode;
+    // A tap-hold key sends its tap keycode when tapped, so that is the usage a host looking for
+    // the lamp under, say, Num Lock should find: LT(1, KC_NUM) binds to Num Lock.
+    if (IS_QK_LAYER_TAP(keycode)) {
+        keycode = QK_LAYER_TAP_GET_TAP_KEYCODE(keycode);
+    } else if (IS_QK_MOD_TAP(keycode)) {
+        keycode = QK_MOD_TAP_GET_TAP_KEYCODE(keycode);
+    }
 #if LAMPARRAY_KIND == LAMPARRAY_KIND_KEYBOARD
     // Basic QMK keycodes currently map directly to Keyboard UsagePage so safe to return without added indirection
     // Mousekeys are ignored due to values overlap Keyboard UsagePage
